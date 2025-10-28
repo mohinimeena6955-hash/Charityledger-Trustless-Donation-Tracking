@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+/**
+ * @title CharityLedger: Trustless Donation Tracking
+ * @dev A transparent, decentralized donation tracking system
+ */
+contract CharityLedger {
+    address public charityOwner;
+    uint256 public totalDonations;
+
+    // Mapping to store how much each address has donated
+    mapping(address => uint256) public donorBalances;
+
+    // Event for donation tracking
+    event DonationReceived(address indexed donor, uint256 amount);
+    event FundsWithdrawn(address indexed owner, uint256 amount);
+
+    constructor() {
+        charityOwner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == charityOwner, "Not authorized: Only charity owner");
+        _;
+    }
+
+    /**
+     * @dev Core Function #1: Donate to the charity
+     * Records donor info and increases total donation count
+     */
+    function donate() external payable {
+        require(msg.value > 0, "Donation must be greater than 0");
+        donorBalances[msg.sender] += msg.value;
+        totalDonations += msg.value;
+        emit DonationReceived(msg.sender, msg.value);
+    }
+
+    /**
+     * @dev Core Function #2: Check how much a donor has contributed
+     * @param _donor Address of donor
+     */
+    function checkDonation(address _donor) external view returns (uint256) {
+        return donorBalances[_donor];
+    }
+
+    /**
+     * @dev Core Function #3: Withdraw funds (only charity owner)
+     * @param _amount Amount to withdraw
+     */
+    function withdraw(uint256 _amount) external onlyOwner {
+        require(address(this).balance >= _amount, "Insufficient balance");
+        payable(charityOwner).transfer(_amount);
+        emit FundsWithdrawn(charityOwner, _amount);
+    }
+
+    /**
+     * @dev Utility Function: Get total funds held by contract
+     */
+    function getContractBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+}
